@@ -1,0 +1,202 @@
+<script type="text/x-red" data-template-name="gcp-document-ai-processor-config">
+   <div class="form-row">
+       <label for="node-config-input-name"><i class="fa fa-tag"></i> Name</label>
+       <input type="text" id="node-config-input-name">
+   </div>
+    <div class="form-row">
+        <label for="node-config-input-location"><i class="fa fa-globe"></i> Region</label>
+        <select id="node-config-input-location-select">
+            <option value="eu">EU (European Union)</option>
+            <option value="us">US (United States)</option>
+        </select>
+        <input type="hidden" id="node-config-input-location">
+    </div>
+   <div class="form-row">
+       <label for="node-config-input-projectId"><i class="fa fa-cloud"></i> Project ID</label>
+       <input type="text" id="node-config-input-projectId">
+   </div>
+   <div class="form-row">
+       <label for="node-config-input-processorId"><i class="fa fa-magic"></i> Processor ID</label>
+       <input type="text" id="node-config-input-processorId">
+   </div>
+   <div class="form-row">
+       <label for="node-config-input-version"><i class="fa fa-code-fork"></i> Version</label>
+        <select id="node-config-input-version">
+            <option value="v1beta1">v1beta1</options>
+            <option value="v1beta2">v1beta2</options>
+            <option value="v1beta3">v1beta3</options>
+            <option value="v1"">v1</option>
+        </select>
+   </div>
+
+</script>
+
+<script type="text/x-red" data-template-name="gcp-document-ai-processor">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-gcpCredentials"><i class="fa fa-cog"></i> Credentials</label>
+        <input type="text" id="node-input-gcpCredentials">
+    </div>
+    <div class="form-row">
+        <label for="node-input-processor"><i class="fa fa-magic"></i> Processor</label>
+        <input type="text" id="node-input-processor">
+    </div>
+    <div class="form-row">
+        <label for="node-input-typed-output"><i class="fa fa-list"></i> Output</label>
+        <input id="node-input-typed-output" type="text">
+        <input id="node-input-outputType" type="hidden">
+        <input id="node-input-outputProperty" type="hidden">
+    </div>
+    <div class="form-row">
+        <label for="node-input-contentType"><i class="fa fa-file-text-o"></i> Content Type</label>
+        <input type="text" id="node-input-contentType">
+    </div>
+    <div class="form-row">
+        <label for="node-input-timeout"><i class="fa fa-clock-o"></i> Timeout</label>
+        <input type="number" id="node-input-timeout">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="gcp-document-ai-processor"></script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('gcp-document-ai-processor-config', {
+        category: 'config',
+        defaults: {
+            name: {
+                value: ''
+            },
+            location: {
+                value: 'us',
+                required: true
+            },
+            projectId: {
+                value: '',
+                required: true
+            },
+            processorId: {
+                value: '',
+                required: true
+            },
+            version: {
+                value: 'v1',
+                required: true
+            }
+        },
+        paletteLabel: 'doc ai processor config',
+        label: function () {
+            return this.name || this.processorId;
+        },
+        oneditprepare: function () {
+            $('#node-config-input-location-select').change(function () {
+                $('#node-config-input-location').val($(this).val());
+            }).val(this.location);
+        }
+    });
+
+    RED.nodes.registerType('gcp-document-ai-processor', {
+        category: 'google cloud',
+        color: '#c0deed',
+        defaults: {
+            name: {
+                value: ''
+            },
+            gcpCredentials: {
+                value: '',
+                required: true,
+                type: 'gcp-credentials-config'
+            },
+            processor: {
+                value: '',
+                required: true,
+                type: 'gcp-document-ai-processor-config'
+            },
+            outputType: {
+                value: 'full',
+                required: true
+            },
+            outputProperty: {
+                value: ''
+            },
+            contentType: {
+                value: ''
+            },
+            timeout: {
+                value: null
+            }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: 'document-ai-blue.svg',
+        paletteLabel: 'doc ai processor',
+        label: function () {
+            return this.name || 'doc ai processor';
+        },
+        labelStyle: function () {
+            return this.name ? 'node_label_italic' : '';
+        },
+        oneditprepare: function () {
+            var fullType = {
+                value: 'full',
+                label: 'complete document object',
+                hasValue: false
+            };
+            var documentType = {
+                value: 'document',
+                label: 'document.',
+                hasValue: true
+            }
+            var fieldsType = {
+                value: 'fields',
+                label: 'fields (form parser, document parsers)',
+                hasValue: false
+            };
+            var tablesType = {
+                value: 'tables',
+                label: 'tables (form parser)',
+                hasValue: false
+            };
+            var partsType = {
+                value: 'parts',
+                label: 'document parts (document splitters)',
+                hasValue: false
+            };
+
+            const $typedOutput = $('#node-input-typed-output');
+            $typedOutput.typedInput({
+                default: 'full',
+                types: [fullType, documentType, fieldsType, tablesType, partsType],
+                typeField: $('#node-input-outputType')
+            });
+
+            const outputProperty = this.outputProperty;
+            if (this.outputType === 'document') {
+                $typedOutput.typedInput('type', 'document');
+                $typedOutput.typedInput('value', outputProperty);
+            } else {
+                $typedOutput.typedInput('type', outputProperty);
+            }
+
+            $("#node-input-timeout").typedInput({
+                type: 'num',
+                types: ['num']
+            })
+        },
+        oneditsave: function () {
+            const $typedOutput = $('#node-input-typed-output');
+            let outputType = $typedOutput.typedInput('type');
+            let outputProperty = $typedOutput.typedInput('value');
+
+            if (outputType === 'document' && outputProperty === '') {
+                outputType = 'full';
+            }
+
+            $('#node-input-outputType').val(outputType);
+            $('#node-input-outputProperty').val(outputProperty);
+        }
+    });
+</script>
+

@@ -1,0 +1,17 @@
+{
+  "name": "node-red-contrib-google-cloud-document-ai",
+  "version": "0.0.0",
+  "main": "document-ai.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "node-red": {
+    "nodes": {
+      "document-ai": "document-ai.js"
+    }
+  },
+  "dependencies": {
+    "@google-cloud/documentai": "^3.1.0",
+    "@google-cloud/storage": "^5.16.1"
+  }
+}
