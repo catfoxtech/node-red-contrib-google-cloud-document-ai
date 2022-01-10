@@ -141,20 +141,22 @@ module.exports = function (RED) {
             } else if (this.outputType === 'fields') {
                 const payload = {};
 
-                if (document.entities.length) {
+                if (Array.isArray(document.entities) && document.entities.length) {
                     document.entities.forEach(function (entity) {
                         payload[entity.type] = entity.mentionText;
                         // payload[entity.id] = entity.mentionText; // TODO add option to include indexed property?
                     });
-                } else if (document.pages.length) {
+                } else if (Array.isArray(document.pages)) {
                     const text = document.text;
                     document.pages.forEach(function (page) {
-                        page.formFields.forEach(function (formField) {
-                            const fieldName = extractText(text, formField.fieldName.textAnchor);
-                            const fieldValue = extractText(text, formField.fieldValue.textAnchor);
+                        if (Array.isArray(page.formFields)) {
+                            page.formFields.forEach(function (formField) {
+                                const fieldName = extractText(text, formField.fieldName.textAnchor);
+                                const fieldValue = extractText(text, formField.fieldValue.textAnchor);
 
-                            payload[fieldName] = fieldValue;
-                        });
+                                payload[fieldName] = fieldValue;
+                            });
+                        }
                     });
                 }
 
@@ -164,18 +166,20 @@ module.exports = function (RED) {
             } else if (this.outputType === 'parts') {
                 const payload = [];
 
-                document.entities.forEach(function (entity) {
-                    const part = {};
+                if (Array.isArray(document.entities)) {
+                    document.entities.forEach(function (entity) {
+                        const part = {};
 
-                    if (entity.type) {
-                        part.type = entity.type;
-                    }
-                    part.pages = entity.pageAnchor.pageRefs.map(function (pageRef) {
-                        return pageRef.page || '0';
+                        if (entity.type) {
+                            part.type = entity.type;
+                        }
+                        part.pages = entity.pageAnchor.pageRefs.map(function (pageRef) {
+                            return pageRef.page || '0';
+                        });
+
+                        payload.push(part);
                     });
-
-                    payload.push(part);
-                });
+                }
 
                 msg.payload = payload;
             } else {
