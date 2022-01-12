@@ -36,6 +36,8 @@ module.exports = function (RED) {
             credentials: credentials
         });
 
+        const ULID = require('ulid');
+
         const extractText = function (text, textAnchor) {
             let content = '';
             if (textAnchor && textAnchor.textSegments) {
@@ -76,6 +78,7 @@ module.exports = function (RED) {
             if (msg.payload.bucket && msg.payload.name) {
                 const bucket = msg.payload.bucket;
                 const objectName = msg.payload.name;
+                const ulid = ULID.ulid();
 
                 request.inputDocuments = {
                     gcsDocuments: {
@@ -89,7 +92,7 @@ module.exports = function (RED) {
                 };
                 request.documentOutputConfig = {
                     gcsOutputConfig: {
-                        gcsUri: `gs://${bucket}/${objectName}/${processorId}/`,
+                        gcsUri: `gs://${bucket}/${objectName}/${ulid}/${processorId}/`,
                     }
                 };
 
@@ -98,7 +101,7 @@ module.exports = function (RED) {
                     await operation.promise();
 
                     const [files] = await storage.bucket(bucket).getFiles({
-                        prefix: `${objectName}/${processorId}/`,
+                        prefix: `${objectName}/${ulid}/${processorId}/`,
                     });
 
                     const [file] = await files[0].download();
