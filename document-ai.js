@@ -39,14 +39,14 @@ module.exports = function (RED) {
         const ULID = require('ulid');
 
         const extractText = function (text, textAnchor) {
-            let content = '';
+            let content = [];
             if (textAnchor && textAnchor.textSegments) {
                 textAnchor.textSegments.forEach(function (textSegment) {
-                    content += text.substring(textSegment.startIndex, textSegment.endIndex);
+                    content.push(text.substring(textSegment.startIndex, textSegment.endIndex));
                 });
             }
 
-            return content;
+            return content.join("\n");
         };
 
         this.on('input', async function (msg, _send, done) {
@@ -164,8 +164,25 @@ module.exports = function (RED) {
                 }
 
                 msg.payload = payload;
-                // } else if (this.outputType === 'tables') {
-                //
+            } else if (this.outputType === 'tables') {
+                msg.payload = {};
+
+                if (Array.isArray(document.pages)) {
+                    const text = document.text;
+                    msg.payload = document.pages.map(function (page) {
+                        return page.tables.map(function (table) {
+                            return table.headerRows.map(function (row) {
+                                return row.cells.map(function (cell) {
+                                    return extractText(text, cell.layout.textAnchor);
+                                });
+                            }).concat(table.bodyRows.map(function (row) {
+                                return row.cells.map(function (cell) {
+                                    return extractText(text, cell.layout.textAnchor);
+                                });
+                            }));
+                        });
+                    });
+                }
             } else if (this.outputType === 'parts') {
                 const payload = [];
 
