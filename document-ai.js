@@ -16,10 +16,11 @@ module.exports = function (RED) {
         RED.nodes.createNode(this, config);
 
         this.processor = RED.nodes.getNode(config.processor);
-        this.outputType = config.outputType;
-        this.outputProperty = config.outputProperty;
         this.contentType = config.contentType;
         this.timeout = config.timeout;
+        this.outputType = config.outputType;
+        this.outputProperty = config.outputProperty;
+        this.includeImages = config.includeImages;
 
         const node = this;
 
@@ -138,6 +139,14 @@ module.exports = function (RED) {
             }
 
             msg.doc = document;
+
+            if (!node.includeImages) {
+                if (Array.isArray(document.pages)) {
+                    document.pages.forEach(function (page) {
+                        delete page.image;
+                    });
+                }
+            }
 
             if (this.outputType === 'document') {
                 msg.payload = document[this.outputProperty] || document;

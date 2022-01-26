@@ -45,18 +45,24 @@
         <input type="text" id="node-input-processor">
     </div>
     <div class="form-row">
-        <label for="node-input-typed-output"><i class="fa fa-list"></i> Output</label>
-        <input id="node-input-typed-output" type="text">
-        <input id="node-input-outputType" type="hidden">
-        <input id="node-input-outputProperty" type="hidden">
-    </div>
-    <div class="form-row">
         <label for="node-input-contentType"><i class="fa fa-file-text-o"></i> Content Type</label>
         <input type="text" id="node-input-contentType">
     </div>
     <div class="form-row">
         <label for="node-input-timeout"><i class="fa fa-clock-o"></i> Timeout</label>
         <input type="number" id="node-input-timeout">
+    </div>
+    <div class="form-row">
+        <label for="node-input-typed-output"><i class="fa fa-list"></i> Output</label>
+        <input id="node-input-typed-output" type="text">
+        <input id="node-input-outputType" type="hidden">
+        <input id="node-input-outputProperty" type="hidden">
+    </div>
+    <div class="form-row">
+        <label for="node-input-includeImages"></label>
+        <label for="node-input-includeImages" style="width: auto;">
+        <input type="checkbox" id="node-input-includeImages" style="display: inline-block; width: auto; vertical-align: top;"> Include page images in document
+        </label>
     </div>
 </script>
 
@@ -114,6 +120,12 @@
                 required: true,
                 type: 'gcp-document-ai-processor-config'
             },
+            contentType: {
+                value: ''
+            },
+            timeout: {
+                value: null
+            },
             outputType: {
                 value: 'full',
                 required: true
@@ -121,11 +133,8 @@
             outputProperty: {
                 value: ''
             },
-            contentType: {
-                value: ''
-            },
-            timeout: {
-                value: null
+            includeImages: {
+                value: true
             }
         },
         inputs: 1,
@@ -139,6 +148,11 @@
             return this.name ? 'node_label_italic' : '';
         },
         oneditprepare: function () {
+            $("#node-input-timeout").typedInput({
+                type: 'num',
+                types: ['num']
+            });
+
             var fullType = {
                 value: 'full',
                 label: 'complete document object',
@@ -179,11 +193,6 @@
             } else {
                 $typedOutput.typedInput('type', outputProperty);
             }
-
-            $("#node-input-timeout").typedInput({
-                type: 'num',
-                types: ['num']
-            })
         },
         oneditsave: function () {
             const $typedOutput = $('#node-input-typed-output');
