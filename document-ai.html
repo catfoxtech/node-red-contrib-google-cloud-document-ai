@@ -1,44 +1,34 @@
 <script type="text/x-red" data-template-name="gcp-document-ai-processor-config">
-   <div class="form-row">
-       <label for="node-config-input-name"><i class="fa fa-tag"></i> Name</label>
-       <input type="text" id="node-config-input-name">
-   </div>
+    <div class="form-row">
+        <label for="node-config-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-config-input-name">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-gcpCredentials"><i class="fa fa-cog"></i> Credentials</label>
+        <input type="text" id="node-config-input-gcpCredentials">
+    </div>
     <div class="form-row">
         <label for="node-config-input-location"><i class="fa fa-globe"></i> Region</label>
-        <select id="node-config-input-location-select">
-            <option value="eu">EU (European Union)</option>
-            <option value="us">US (United States)</option>
-        </select>
-        <input type="hidden" id="node-config-input-location">
+        <input type="text" id="node-config-input-location">
     </div>
-   <div class="form-row">
-       <label for="node-config-input-projectId"><i class="fa fa-cloud"></i> Project ID</label>
-       <input type="text" id="node-config-input-projectId">
-   </div>
-   <div class="form-row">
-       <label for="node-config-input-processorId"><i class="fa fa-magic"></i> Processor ID</label>
-       <input type="text" id="node-config-input-processorId">
-   </div>
-   <div class="form-row">
-       <label for="node-config-input-version"><i class="fa fa-code-fork"></i> Version</label>
-        <select id="node-config-input-version">
-            <option value="v1beta1">v1beta1</options>
-            <option value="v1beta2">v1beta2</options>
-            <option value="v1beta3">v1beta3</options>
-            <option value="v1"">v1</option>
-        </select>
-   </div>
-
+    <div class="form-row">
+        <label for="node-config-input-projectId"><i class="fa fa-cloud"></i> Project ID</label>
+        <input type="text" id="node-config-input-projectId">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-processorId"><i class="fa fa-magic"></i> Processor ID</label>
+        <input type="text" id="node-config-input-processorId">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-version"><i class="fa fa-code-fork"></i> Version</label>
+        <input type="text" id="node-config-input-version">
+    </div>
 </script>
 
 <script type="text/x-red" data-template-name="gcp-document-ai-processor">
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-input-name">
-    </div>
-    <div class="form-row">
-        <label for="node-input-gcpCredentials"><i class="fa fa-cog"></i> Credentials</label>
-        <input type="text" id="node-input-gcpCredentials">
     </div>
     <div class="form-row">
         <label for="node-input-processor"><i class="fa fa-magic"></i> Processor</label>
@@ -59,10 +49,9 @@
         <input id="node-input-outputProperty" type="hidden">
     </div>
     <div class="form-row">
-        <label for="node-input-includeImages"></label>
-        <label for="node-input-includeImages" style="width: auto;">
-        <input type="checkbox" id="node-input-includeImages" style="display: inline-block; width: auto; vertical-align: top;"> Include page images in document
-        </label>
+        <label></label>
+        <input type="checkbox" id="node-input-includeImages" style="display: inline-block; width: auto; vertical-align: top;">
+        <label for="node-input-includeImages" style="width: auto;"> Include page images in document</label>
     </div>
 </script>
 
@@ -75,16 +64,18 @@
             name: {
                 value: ''
             },
+            gcpCredentials: {
+                required: true,
+                type: 'gcp-credentials-config'
+            },
             location: {
                 value: 'us',
                 required: true
             },
             projectId: {
-                value: '',
                 required: true
             },
             processorId: {
-                value: '',
                 required: true
             },
             version: {
@@ -97,9 +88,25 @@
             return this.name || this.processorId;
         },
         oneditprepare: function () {
-            $('#node-config-input-location-select').change(function () {
-                $('#node-config-input-location').val($(this).val());
-            }).val(this.location);
+            $('#node-config-input-location').typedInput({
+                types: [{
+                    options: [
+                        {label: 'EU (European Union)', value: 'eu'},
+                        {label: 'US (United States)', value: 'us'}
+                    ]
+                }]
+            });
+
+            $('#node-config-input-version').typedInput({
+                types: [{
+                    options: [
+                        {value: 'v1beta1'},
+                        {value: 'v1beta2'},
+                        {value: 'v1beta3'},
+                        {value: 'v1'}
+                    ]
+                }]
+            });
         }
     });
 
@@ -110,31 +117,22 @@
             name: {
                 value: ''
             },
-            gcpCredentials: {
-                value: '',
-                required: true,
-                type: 'gcp-credentials-config'
-            },
             processor: {
-                value: '',
                 required: true,
                 type: 'gcp-document-ai-processor-config'
             },
             contentType: {
-                value: ''
+                value: 'application/pdf'
             },
-            timeout: {
-                value: null
-            },
+            timeout: {},
             outputType: {
                 value: 'full',
                 required: true
             },
-            outputProperty: {
-                value: ''
-            },
+            outputProperty: {},
             includeImages: {
-                value: true
+                value: true,
+                required: true
             }
         },
         inputs: 1,
@@ -149,7 +147,6 @@
         },
         oneditprepare: function () {
             $("#node-input-timeout").typedInput({
-                type: 'num',
                 types: ['num']
             });
 
@@ -160,8 +157,7 @@
             };
             var documentType = {
                 value: 'document',
-                label: 'document.',
-                hasValue: true
+                label: 'document.'
             }
             var fieldsType = {
                 value: 'fields',

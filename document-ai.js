@@ -8,12 +8,24 @@ module.exports = function (RED) {
         this.projectId = config.projectId;
         this.processorId = config.processorId;
         this.version = config.version;
-    }
 
-    RED.nodes.registerType('gcp-document-ai-processor-config', ProcessorConfig, {});
+        const gcpCredentials = RED.nodes.getNode(config.gcpCredentials);
+        const credentials = JSON.parse(gcpCredentials.credentials.privateKey);
+
+        const {DocumentProcessorServiceClient} = require('@google-cloud/documentai')[this.version];
+        this.client = new DocumentProcessorServiceClient({
+            credentials: credentials
+        });
+
+        const {Storage} = require('@google-cloud/storage');
+        this.storage = new Storage({
+            credentials: credentials
+        });
+    }
 
     function ProcessorNode(config) {
         RED.nodes.createNode(this, config);
+        const node = this;
 
         this.processor = RED.nodes.getNode(config.processor);
         this.contentType = config.contentType;
@@ -21,21 +33,6 @@ module.exports = function (RED) {
         this.outputType = config.outputType;
         this.outputProperty = config.outputProperty;
         this.includeImages = config.includeImages;
-
-        const node = this;
-
-        const gcpCredentials = RED.nodes.getNode(config.gcpCredentials);
-        const credentials = JSON.parse(gcpCredentials.credentials.privateKey);
-
-        const {DocumentProcessorServiceClient} = require('@google-cloud/documentai')[this.processor.version];
-        const processor = new DocumentProcessorServiceClient({
-            credentials: credentials
-        });
-
-        const {Storage} = require('@google-cloud/storage');
-        const storage = new Storage({
-            credentials: credentials
-        });
 
         const ULID = require('ulid');
 
@@ -57,12 +54,12 @@ module.exports = function (RED) {
             const processorLocation = node.processor.location;
             const processorId = node.processor.processorId;
 
-            const contentType = msg.contentType || node.contentType || 'application/pdf';
+            const contentType = msg.contentType || node.contentType;
             const timeout = msg.timeout || node.timeout;
 
             let processorPath;
-            if (processor.processorPath) {
-                processorPath = processor.processorPath(projectId, processorLocation, processorId);
+            if (node.processor.client.processorPath) {
+                processorPath = node.processor.client.processorPath(projectId, processorLocation, processorId);
             } else {
                 processorPath = `projects/${projectId}/locations/${processorLocation}/processors/${processorId}`;
             }
@@ -98,10 +95,10 @@ module.exports = function (RED) {
                 };
 
                 try {
-                    const [operation] = await processor.batchProcessDocuments(request, options);
+                    const [operation] = await node.processor.client.batchProcessDocuments(request, options);
                     await operation.promise();
 
-                    const [files] = await storage.bucket(bucket).getFiles({
+                    const [files] = await node.processor.storage.bucket(bucket).getFiles({
                         prefix: `${objectName}/${ulid}/${processorId}/`,
                     });
 
@@ -122,7 +119,7 @@ module.exports = function (RED) {
                 }
 
                 try {
-                    const [result] = await processor.processDocument(request, options);
+                    const [result] = await node.processor.client.processDocument(request, options);
 
                     ({document} = result);
                 } catch (e) {
@@ -222,5 +219,6 @@ module.exports = function (RED) {
         });
     }
 
+    RED.nodes.registerType('gcp-document-ai-processor-config', ProcessorConfig);
     RED.nodes.registerType('gcp-document-ai-processor', ProcessorNode);
 }
