@@ -1,2 +1,1 @@
-/node_modules/
-node-red-contrib-google-cloud-document-ai-*.tgz
+**/node_modules/
