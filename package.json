@@ -16,6 +16,6 @@
     "ulid": "^2.3.0"
   },
   "devDependencies": {
-    "node-red": "^2.2.2"
+    "node-red": "^3.0.2"
   }
 }
